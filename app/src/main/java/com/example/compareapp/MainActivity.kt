@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -58,10 +59,12 @@ class MainActivity : AppCompatActivity() {
                 try {
                     startActivity(boltIntent)
                 } catch (e: Exception) {
+                    Log.e("MainActivity", "Could not open Bolt app: ${e.message}")
                     Toast.makeText(this, "Could not open Bolt app", Toast.LENGTH_SHORT).show()
                 }
             }, 500)
         } catch (e: Exception) {
+            Log.e("MainActivity", "Could not open Uber app: ${e.message}")
             Toast.makeText(this, "Could not open Uber app", Toast.LENGTH_SHORT).show()
         }
     }
