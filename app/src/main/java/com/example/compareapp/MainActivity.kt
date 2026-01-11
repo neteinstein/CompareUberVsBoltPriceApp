@@ -3,6 +3,8 @@ package com.example.compareapp
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -52,7 +54,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(uberIntent)
             
             // Small delay to ensure split screen is ready
-            android.os.Handler(mainLooper).postDelayed({
+            Handler(Looper.getMainLooper()).postDelayed({
                 try {
                     startActivity(boltIntent)
                 } catch (e: Exception) {
