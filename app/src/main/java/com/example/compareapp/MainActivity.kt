@@ -8,10 +8,19 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,44 +29,110 @@ import java.io.IOException
 import java.net.URLEncoder
 import java.util.Locale
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
-    private lateinit var pickupEditText: EditText
-    private lateinit var dropoffEditText: EditText
-    private lateinit var compareButton: Button
     private lateinit var geocoder: Geocoder
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        pickupEditText = findViewById(R.id.pickupEditText)
-        dropoffEditText = findViewById(R.id.dropoffEditText)
-        compareButton = findViewById(R.id.compareButton)
         geocoder = Geocoder(this, Locale.getDefault())
-
-        compareButton.setOnClickListener {
-            val pickup = pickupEditText.text.toString()
-            val dropoff = dropoffEditText.text.toString()
-
-            if (pickup.isEmpty() || dropoff.isEmpty()) {
-                Toast.makeText(this, "Please enter both pickup and dropoff locations", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            // Disable button to prevent multiple clicks
-            compareButton.isEnabled = false
-            
-            // Launch coroutine for geocoding and opening apps
-            lifecycleScope.launch {
-                try {
-                    openInSplitScreen(pickup, dropoff)
-                } finally {
-                    // Re-enable button
-                    compareButton.isEnabled = true
+        
+        setContent {
+            CompareAppTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    CompareScreen()
                 }
             }
         }
+    }
+
+    @Composable
+    fun CompareScreen() {
+        var pickup by remember { mutableStateOf("") }
+        var dropoff by remember { mutableStateOf("") }
+        var isLoading by remember { mutableStateOf(false) }
+        val context = LocalContext.current
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Compare App",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            OutlinedTextField(
+                value = pickup,
+                onValueChange = { pickup = it },
+                label = { Text("Pickup") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                enabled = !isLoading
+            )
+
+            OutlinedTextField(
+                value = dropoff,
+                onValueChange = { dropoff = it },
+                label = { Text("Dropoff") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                enabled = !isLoading
+            )
+
+            Button(
+                onClick = {
+                    if (pickup.isEmpty() || dropoff.isEmpty()) {
+                        Toast.makeText(
+                            context,
+                            "Please enter both pickup and dropoff locations",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@Button
+                    }
+
+                    isLoading = true
+                    lifecycleScope.launch {
+                        try {
+                            openInSplitScreen(pickup, dropoff)
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(if (isLoading) "Loading..." else "Compare")
+            }
+        }
+    }
+
+    @Composable
+    fun CompareAppTheme(content: @Composable () -> Unit) {
+        MaterialTheme(
+            colorScheme = lightColorScheme(),
+            content = content
+        )
     }
 
     private suspend fun openInSplitScreen(pickup: String, dropoff: String) {
