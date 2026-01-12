@@ -124,7 +124,7 @@ class MainActivity : ComponentActivity() {
             return null
         }
 
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.IO) @androidx.annotation.RequiresPermission(allOf = [android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION]) {
             try {
                 val cancellationTokenSource = CancellationTokenSource()
                 fusedLocationClient.getCurrentLocation(
