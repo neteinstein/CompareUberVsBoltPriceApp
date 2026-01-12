@@ -5,8 +5,6 @@ import android.location.Geocoder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -151,17 +149,20 @@ class MainActivity : ComponentActivity() {
             startActivity(uberIntent)
             
             // Small delay to ensure split screen is ready
-            Handler(Looper.getMainLooper()).postDelayed({
-                try {
-                    startActivity(boltIntent)
-                } catch (e: Exception) {
-                    Log.e("MainActivity", "Could not open Bolt app: ${e.message}")
-                    Toast.makeText(this, "Could not open Bolt app", Toast.LENGTH_SHORT).show()
+            kotlinx.coroutines.delay(500)
+            try {
+                startActivity(boltIntent)
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Could not open Bolt app: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "Could not open Bolt app", Toast.LENGTH_SHORT).show()
                 }
-            }, 500)
+            }
         } catch (e: Exception) {
             Log.e("MainActivity", "Could not open Uber app: ${e.message}")
-            Toast.makeText(this, "Could not open Uber app", Toast.LENGTH_SHORT).show()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, "Could not open Uber app", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -192,29 +193,16 @@ class MainActivity : ComponentActivity() {
     private suspend fun geocodeAddress(address: String): Pair<Double, Double>? {
         return withContext(Dispatchers.IO) {
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    // For Android 13+ (API 33+), use the newer async API
-                    // Note: This would require callback-based approach, but for simplicity
-                    // we'll use the sync method in IO dispatcher
-                    @Suppress("DEPRECATION")
-                    val addresses = geocoder.getFromLocationName(address, 1)
-                    if (addresses != null && addresses.isNotEmpty()) {
-                        val location = addresses[0]
-                        Pair(location.latitude, location.longitude)
-                    } else {
-                        Log.w("MainActivity", "No results found for address: $address")
-                        null
-                    }
+                // Note: getFromLocationName is deprecated on API 33+, but the new async API
+                // requires different handling. For now, we use the deprecated method in IO dispatcher
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocationName(address, 1)
+                if (addresses != null && addresses.isNotEmpty()) {
+                    val location = addresses[0]
+                    Pair(location.latitude, location.longitude)
                 } else {
-                    @Suppress("DEPRECATION")
-                    val addresses = geocoder.getFromLocationName(address, 1)
-                    if (addresses != null && addresses.isNotEmpty()) {
-                        val location = addresses[0]
-                        Pair(location.latitude, location.longitude)
-                    } else {
-                        Log.w("MainActivity", "No results found for address: $address")
-                        null
-                    }
+                    Log.w("MainActivity", "No results found for address: $address")
+                    null
                 }
             } catch (e: IOException) {
                 Log.e("MainActivity", "Geocoding failed for address: $address", e)
