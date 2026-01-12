@@ -101,8 +101,13 @@ class MainActivity : ComponentActivity() {
 
         // Check app installation status when screen is created and when it resumes
         DisposableEffect(lifecycleOwner) {
+            // Initial check
+            val (uberInstalled, boltInstalled) = checkRequiredApps()
+            isUberInstalled = uberInstalled
+            isBoltInstalled = boltInstalled
+            
             val observer = LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_CREATE || event == Lifecycle.Event.ON_RESUME) {
+                if (event == Lifecycle.Event.ON_RESUME) {
                     val (uberInstalled, boltInstalled) = checkRequiredApps()
                     isUberInstalled = uberInstalled
                     isBoltInstalled = boltInstalled
@@ -115,6 +120,17 @@ class MainActivity : ComponentActivity() {
         }
 
         val areBothAppsInstalled = isUberInstalled && isBoltInstalled
+        val warningMessage = remember(isUberInstalled, isBoltInstalled) {
+            if (areBothAppsInstalled) {
+                null
+            } else {
+                val missingApps = buildList {
+                    if (!isUberInstalled) add("Uber")
+                    if (!isBoltInstalled) add("Bolt")
+                }
+                "Warning: ${missingApps.joinToString(" and ")} ${if (missingApps.size == 1) "app is" else "apps are"} required for this to work"
+            }
+        }
 
         Column(
             modifier = Modifier
@@ -133,13 +149,9 @@ class MainActivity : ComponentActivity() {
             )
 
             // Warning label when apps are not installed
-            if (!areBothAppsInstalled) {
-                val missingApps = mutableListOf<String>()
-                if (!isUberInstalled) missingApps.add("Uber")
-                if (!isBoltInstalled) missingApps.add("Bolt")
-                
+            if (!areBothAppsInstalled && warningMessage != null) {
                 Text(
-                    text = "Warning: ${missingApps.joinToString(" and ")} ${if (missingApps.size == 1) "app is" else "apps are"} required for this to work",
+                    text = warningMessage,
                     fontSize = 14.sp,
                     color = Color.Red,
                     textAlign = TextAlign.Center,
