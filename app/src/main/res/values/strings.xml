@@ -8,4 +8,8 @@
     <string name="compare">Compare</string>
     <string name="error_bolt">Could not open Bolt app</string>
     <string name="error_uber">Could not open Uber app</string>
+    <string name="use_current_location">Use current location</string>
+    <string name="location_permission_denied">Location permission denied</string>
+    <string name="location_error">Could not get current location</string>
+    <string name="getting_location">Getting location…</string>
 </resources>
