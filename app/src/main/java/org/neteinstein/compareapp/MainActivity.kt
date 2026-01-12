@@ -182,14 +182,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun createUberDeepLink(pickup: String, dropoff: String): String {
+    internal fun createUberDeepLink(pickup: String, dropoff: String): String {
         val pickupEncoded = URLEncoder.encode(pickup, "UTF-8")
         val dropoffEncoded = URLEncoder.encode(dropoff, "UTF-8")
         // Uber deep link format
         return "uber://?action=setPickup&pickup[formatted_address]=$pickupEncoded&dropoff[formatted_address]=$dropoffEncoded"
     }
 
-    private suspend fun createBoltDeepLink(pickup: String, dropoff: String): String {
+    internal suspend fun createBoltDeepLink(pickup: String, dropoff: String): String {
         // Try to geocode the addresses to coordinates (async)
         val pickupCoords = geocodeAddress(pickup)
         val dropoffCoords = geocodeAddress(dropoff)
@@ -206,7 +206,7 @@ class MainActivity : ComponentActivity() {
         }
     }
     
-    private suspend fun geocodeAddress(address: String): Pair<Double, Double>? {
+    internal suspend fun geocodeAddress(address: String): Pair<Double, Double>? {
         return withContext(Dispatchers.IO) {
             try {
                 // Note: getFromLocationName is deprecated on API 33+, but the new async API
