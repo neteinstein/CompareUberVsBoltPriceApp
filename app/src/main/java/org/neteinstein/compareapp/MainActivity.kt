@@ -1,16 +1,21 @@
 package org.neteinstein.compareapp
 
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,8 +23,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -40,12 +49,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.net.URLEncoder
@@ -54,10 +69,12 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
 
     private lateinit var geocoder: Geocoder
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         geocoder = Geocoder(this, Locale.getDefault())
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         
         // Enable edge-to-edge display to handle window insets properly
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -90,6 +107,98 @@ class MainActivity : ComponentActivity() {
         return Pair(isUberInstalled, isBoltInstalled)
     }
 
+    internal fun hasLocationPermission(): Boolean {
+        return ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED ||
+        ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    internal suspend fun getCurrentLocation(): Location? {
+        if (!hasLocationPermission()) {
+            Log.w("MainActivity", "Location permission not granted")
+            return null
+        }
+
+        return withContext(Dispatchers.IO) @androidx.annotation.RequiresPermission(allOf = [android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION]) {
+            try {
+                val cancellationTokenSource = CancellationTokenSource()
+                fusedLocationClient.getCurrentLocation(
+                    Priority.PRIORITY_HIGH_ACCURACY,
+                    cancellationTokenSource.token
+                ).await()
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error getting current location", e)
+                null
+            }
+        }
+    }
+
+    internal suspend fun reverseGeocode(latitude: Double, longitude: Double): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocation(latitude, longitude, 1)
+                if (addresses != null && addresses.isNotEmpty()) {
+                    val address = addresses[0]
+                    // Build a formatted address string
+                    buildString {
+                        address.getAddressLine(0)?.let { append(it) }
+                    }.takeIf { it.isNotEmpty() }
+                } else {
+                    Log.w("MainActivity", "No results found for coordinates: $latitude, $longitude")
+                    null
+                }
+            } catch (e: IOException) {
+                Log.e("MainActivity", "Reverse geocoding failed", e)
+                null
+            }
+        }
+    }
+
+    private suspend fun handleLocationRetrieval(
+        onLocationReceived: (latitude: Double, longitude: Double, address: String) -> Unit,
+        onError: () -> Unit
+    ) {
+        val location = getCurrentLocation()
+        if (location != null) {
+            // Reverse geocode for display in pickup field
+            val address = reverseGeocode(location.latitude, location.longitude)
+                ?: "Lat: ${location.latitude}, Lng: ${location.longitude}"
+            onLocationReceived(location.latitude, location.longitude, address)
+        } else {
+            onError()
+        }
+    }
+
+    private fun fetchAndSetLocation(
+        context: android.content.Context,
+        setGettingLocation: (Boolean) -> Unit,
+        onLocationReceived: (latitude: Double, longitude: Double, address: String) -> Unit
+    ) {
+        setGettingLocation(true)
+        lifecycleScope.launch {
+            try {
+                handleLocationRetrieval(
+                    onLocationReceived = onLocationReceived,
+                    onError = {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.location_error),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                )
+            } finally {
+                setGettingLocation(false)
+            }
+        }
+    }
+
     @Composable
     fun CompareScreen() {
         var pickup by remember { mutableStateOf("") }
@@ -97,8 +206,38 @@ class MainActivity : ComponentActivity() {
         var isLoading by remember { mutableStateOf(false) }
         var isUberInstalled by remember { mutableStateOf(false) }
         var isBoltInstalled by remember { mutableStateOf(false) }
+        var isUsingDeviceLocation by remember { mutableStateOf(false) }
+        var isGettingLocation by remember { mutableStateOf(false) }
+        var pickupCoordinates by remember { mutableStateOf<Pair<Double, Double>?>(null) }
         val context = LocalContext.current
         val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+
+        // Location permission launcher
+        val locationPermissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                         permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+            
+            if (granted) {
+                // Permission granted, get location
+                fetchAndSetLocation(
+                    context = context,
+                    setGettingLocation = { isGettingLocation = it },
+                    onLocationReceived = { lat, lng, address ->
+                        pickupCoordinates = Pair(lat, lng)
+                        pickup = address
+                        isUsingDeviceLocation = true
+                    }
+                )
+            } else {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.location_permission_denied),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
 
         // Check app installation status when screen is created and when it resumes
         DisposableEffect(lifecycleOwner) {
@@ -164,15 +303,68 @@ class MainActivity : ComponentActivity() {
                 )
             } ?: Spacer(modifier = Modifier.padding(bottom = 16.dp))
 
-            OutlinedTextField(
-                value = pickup,
-                onValueChange = { pickup = it },
-                label = { Text(stringResource(R.string.pickup_location)) },
+            // Pickup location with location button
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
-                enabled = !isLoading
-            )
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = pickup,
+                    onValueChange = { 
+                        pickup = it
+                        // If user starts typing, disable device location mode
+                        if (isUsingDeviceLocation) {
+                            isUsingDeviceLocation = false
+                            pickupCoordinates = null
+                        }
+                    },
+                    label = { Text(stringResource(R.string.pickup_location)) },
+                    modifier = Modifier.weight(1f),
+                    enabled = !isLoading && !isUsingDeviceLocation && !isGettingLocation
+                )
+                
+                IconButton(
+                    onClick = {
+                        if (hasLocationPermission()) {
+                            // Permission already granted, get location directly
+                            fetchAndSetLocation(
+                                context = context,
+                                setGettingLocation = { isGettingLocation = it },
+                                onLocationReceived = { lat, lng, address ->
+                                    pickupCoordinates = Pair(lat, lng)
+                                    pickup = address
+                                    isUsingDeviceLocation = true
+                                }
+                            )
+                        } else {
+                            // Request permission
+                            locationPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        }
+                    },
+                    enabled = !isLoading && !isGettingLocation
+                ) {
+                    if (isGettingLocation) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.LocationOn,
+                            contentDescription = stringResource(R.string.use_current_location),
+                            tint = if (isUsingDeviceLocation) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = dropoff,
@@ -198,7 +390,7 @@ class MainActivity : ComponentActivity() {
                     isLoading = true
                     lifecycleScope.launch {
                         try {
-                            openInSplitScreen(pickup, dropoff)
+                            openInSplitScreen(pickup, dropoff, pickupCoordinates)
                         } finally {
                             isLoading = false
                         }
@@ -228,14 +420,14 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private suspend fun openInSplitScreen(pickup: String, dropoff: String) {
-        // Open Uber deep link
+    private suspend fun openInSplitScreen(pickup: String, dropoff: String, pickupCoordinates: Pair<Double, Double>? = null) {
+        // Open Uber deep link (always uses address string)
         val uberDeepLink = createUberDeepLink(pickup, dropoff)
         val uberIntent = Intent(Intent.ACTION_VIEW, Uri.parse(uberDeepLink))
         uberIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 
-        // Open Bolt deep link (with async geocoding)
-        val boltDeepLink = createBoltDeepLink(pickup, dropoff)
+        // Open Bolt deep link (uses coordinates if available, otherwise geocodes the address)
+        val boltDeepLink = createBoltDeepLink(pickup, dropoff, pickupCoordinates)
         val boltIntent = Intent(Intent.ACTION_VIEW, Uri.parse(boltDeepLink))
         boltIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 
@@ -268,9 +460,9 @@ class MainActivity : ComponentActivity() {
         return "uber://?action=setPickup&pickup[formatted_address]=$pickupEncoded&dropoff[formatted_address]=$dropoffEncoded"
     }
 
-    internal suspend fun createBoltDeepLink(pickup: String, dropoff: String): String {
-        // Try to geocode the addresses to coordinates (async)
-        val pickupCoords = geocodeAddress(pickup)
+    internal suspend fun createBoltDeepLink(pickup: String, dropoff: String, pickupCoordinates: Pair<Double, Double>? = null): String {
+        // If pickup coordinates are provided (from device location), use them directly
+        val pickupCoords = pickupCoordinates ?: geocodeAddress(pickup)
         val dropoffCoords = geocodeAddress(dropoff)
         
         return if (pickupCoords != null && dropoffCoords != null) {
