@@ -160,6 +160,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private suspend fun handleLocationRetrieval(
+        onLocationReceived: (latitude: Double, longitude: Double, address: String) -> Unit,
+        onError: () -> Unit
+    ) {
+        val location = getCurrentLocation()
+        if (location != null) {
+            // Reverse geocode for display in pickup field
+            val address = reverseGeocode(location.latitude, location.longitude)
+                ?: "Lat: ${location.latitude}, Lng: ${location.longitude}"
+            onLocationReceived(location.latitude, location.longitude, address)
+        } else {
+            onError()
+        }
+    }
+
     @Composable
     fun CompareScreen() {
         var pickup by remember { mutableStateOf("") }
@@ -185,22 +200,20 @@ class MainActivity : ComponentActivity() {
                 isGettingLocation = true
                 lifecycleScope.launch {
                     try {
-                        val location = getCurrentLocation()
-                        if (location != null) {
-                            pickupCoordinates = Pair(location.latitude, location.longitude)
-                            // Reverse geocode for display in pickup field
-                            val address = reverseGeocode(location.latitude, location.longitude)
-                            pickup = address ?: "Lat: ${location.latitude}, Lng: ${location.longitude}"
-                            isUsingDeviceLocation = true
-                        } else {
-                            withContext(Dispatchers.Main) {
+                        handleLocationRetrieval(
+                            onLocationReceived = { lat, lng, address ->
+                                pickupCoordinates = Pair(lat, lng)
+                                pickup = address
+                                isUsingDeviceLocation = true
+                            },
+                            onError = {
                                 Toast.makeText(
                                     context,
                                     context.getString(R.string.location_error),
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
-                        }
+                        )
                     } finally {
                         isGettingLocation = false
                     }
@@ -308,22 +321,20 @@ class MainActivity : ComponentActivity() {
                             isGettingLocation = true
                             lifecycleScope.launch {
                                 try {
-                                    val location = getCurrentLocation()
-                                    if (location != null) {
-                                        pickupCoordinates = Pair(location.latitude, location.longitude)
-                                        // Reverse geocode for display in pickup field
-                                        val address = reverseGeocode(location.latitude, location.longitude)
-                                        pickup = address ?: "Lat: ${location.latitude}, Lng: ${location.longitude}"
-                                        isUsingDeviceLocation = true
-                                    } else {
-                                        withContext(Dispatchers.Main) {
+                                    handleLocationRetrieval(
+                                        onLocationReceived = { lat, lng, address ->
+                                            pickupCoordinates = Pair(lat, lng)
+                                            pickup = address
+                                            isUsingDeviceLocation = true
+                                        },
+                                        onError = {
                                             Toast.makeText(
                                                 context,
                                                 context.getString(R.string.location_error),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
-                                    }
+                                    )
                                 } finally {
                                     isGettingLocation = false
                                 }
