@@ -27,7 +27,7 @@ You need to configure the following secrets in your GitHub repository:
 If you don't have a keystore yet, create one using the following command:
 
 ```bash
-keytool -genkey -v -keystore release.keystore -alias compareapp -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkeypair -v -keystore release.keystore -alias compareapp -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 Follow the prompts to set passwords and enter your information.
