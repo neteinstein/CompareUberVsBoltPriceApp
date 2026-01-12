@@ -4,10 +4,11 @@ An Android app that allows users to compare ride-sharing services (Uber and Bolt
 
 ## Features
 
-- Simple and intuitive UI with a "Compare App" title
+- Modern Jetpack Compose UI with Material3 design
+- Simple and intuitive interface with a "Compare App" title
 - Two text input fields for Pickup and Dropoff locations
-- Compare button to launch both Uber and Bolt apps in split screen
-- Deep linking support for both Uber and Bolt apps
+- Compare button with loading indicator during geocoding
+- Deep linking support for both Uber and Bolt apps with automatic coordinate conversion
 
 ## How to Use
 
@@ -25,9 +26,9 @@ An Android app that allows users to compare ride-sharing services (Uber and Bolt
 ## Building the App
 
 To build this app, you need:
-- Android Studio
-- Android SDK 33
-- Gradle 7.5
+- Android Studio Hedgehog (2023.1.1) or later
+- Android SDK 36
+- Gradle 8.0+
 
 ### Build Steps
 
@@ -55,5 +56,6 @@ The app automatically converts text addresses to coordinates using Android's Geo
 
 - **Language:** Kotlin
 - **Minimum SDK:** 24
-- **Target SDK:** 33
-- **Architecture:** Single Activity with simple UI layout 
+- **Target SDK:** 36
+- **UI Framework:** Jetpack Compose with Material3
+- **Architecture:** Single Activity with Compose UI 

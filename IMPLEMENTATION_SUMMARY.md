@@ -6,14 +6,15 @@ This Android application allows users to compare ride-sharing services (Uber and
 ## Requirements Met ✓
 
 ### 1. Screen with Title "Compare App"
-✓ Implemented in `activity_main.xml` with a TextView displaying "Compare App" in bold, 24sp font
+✓ Implemented with Jetpack Compose Text component displaying "Compare App" in bold, 24sp font
 
 ### 2. Two Text Inputs
-✓ **Pickup**: EditText with hint "Pickup"
-✓ **Dropoff**: EditText with hint "Dropoff"
+✓ **Pickup**: OutlinedTextField with label "Pickup"
+✓ **Dropoff**: OutlinedTextField with label "Dropoff"
 
 ### 3. Compare Button
-✓ Button labeled "Compare" that triggers the deep link functionality
+✓ Material3 Button labeled "Compare" that triggers the deep link functionality
+✓ Shows loading indicator during geocoding operation
 
 ### 4. Deep Link Integration
 ✓ **Uber Deep Link**: `uber://?action=setPickup&pickup[formatted_address]=...&dropoff[formatted_address]=...`
@@ -29,14 +30,12 @@ This Android application allows users to compare ride-sharing services (Uber and
 ```
 CompareApp/
 ├── app/
-│   ├── build.gradle                         # App-level Gradle configuration
+│   ├── build.gradle                         # App-level Gradle configuration with Compose
 │   ├── proguard-rules.pro                   # ProGuard rules
 │   └── src/main/
 │       ├── AndroidManifest.xml              # App manifest with permissions
-│       ├── java/com/example/compareapp/
-│       │   └── MainActivity.kt              # Main activity with business logic
-│       └── res/layout/
-│           └── activity_main.xml            # UI layout file
+│       └── java/com/example/compareapp/
+│           └── MainActivity.kt              # Main activity with Compose UI and business logic
 ├── build.gradle                             # Project-level Gradle configuration
 ├── settings.gradle                          # Gradle settings
 ├── gradle/wrapper/
@@ -101,13 +100,17 @@ Handler(Looper.getMainLooper()).postDelayed({
 
 - **Language**: Kotlin
 - **Minimum SDK**: 24 (Android 7.0 Nougat) - Required for split screen support
-- **Target SDK**: 33 (Android 13)
+- **Target SDK**: 36 (Android 14)
 - **Architecture**: Single Activity Application
-- **UI Framework**: Android Views with LinearLayout
+- **UI Framework**: Jetpack Compose with Material3
 - **Dependencies**:
-  - AndroidX Core KTX 1.9.0
-  - AndroidX AppCompat 1.6.1
-  - Material Components 1.8.0
+  - AndroidX Core KTX 1.17.0
+  - AndroidX AppCompat 1.7.1
+  - Material Components 1.13.0
+  - Kotlinx Coroutines Android 1.9.0
+  - Lifecycle Runtime KTX 2.8.7
+  - Compose BOM 2024.12.01
+  - Activity Compose 1.9.3
 
 ## Testing Requirements
 
