@@ -64,6 +64,11 @@ class MainActivity : ComponentActivity() {
     private lateinit var geocoder: Geocoder
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var pickupLocation: Pair<Double, Double>? = null
+    private var pickupAddress: String? = null  // Store the address to avoid redundant geocoding
+    
+    // State holders for location functionality
+    private val _pickupText = mutableStateOf("")
+    private val _isUsingLocation = mutableStateOf(false)
     
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -110,10 +115,10 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun CompareScreen() {
-        var pickup by remember { mutableStateOf("") }
+        var pickup by remember { _pickupText }
         var dropoff by remember { mutableStateOf("") }
         var isLoading by remember { mutableStateOf(false) }
-        var isUsingLocation by remember { mutableStateOf(false) }
+        var isUsingLocation by remember { _isUsingLocation }
         val context = LocalContext.current
 
         Column(
@@ -143,8 +148,10 @@ class MainActivity : ComponentActivity() {
                     value = pickup,
                     onValueChange = { 
                         pickup = it
+                        _pickupText.value = it
                         if (it.isNotEmpty()) {
                             isUsingLocation = false
+                            _isUsingLocation.value = false
                             pickupLocation = null
                         }
                     },
@@ -358,18 +365,12 @@ class MainActivity : ComponentActivity() {
                     
                     // Reverse geocode to get address for display
                     val address = reverseGeocode(location.latitude, location.longitude)
+                    pickupAddress = address ?: "Current Location"
                     
+                    // Update state instead of recreating UI
                     withContext(Dispatchers.Main) {
-                        setContent {
-                            CompareAppTheme {
-                                Surface(
-                                    modifier = Modifier.fillMaxSize(),
-                                    color = MaterialTheme.colorScheme.background
-                                ) {
-                                    CompareScreenWithLocation(address ?: "Current Location")
-                                }
-                            }
-                        }
+                        _pickupText.value = pickupAddress!!
+                        _isUsingLocation.value = true
                     }
                 } else {
                     withContext(Dispatchers.Main) {
@@ -389,115 +390,6 @@ class MainActivity : ComponentActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-            }
-        }
-    }
-    
-    @Composable
-    fun CompareScreenWithLocation(locationAddress: String) {
-        var pickup by remember { mutableStateOf(locationAddress) }
-        var dropoff by remember { mutableStateOf("") }
-        var isLoading by remember { mutableStateOf(false) }
-        var isUsingLocation by remember { mutableStateOf(true) }
-        val context = LocalContext.current
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Compare App",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = pickup,
-                    onValueChange = { 
-                        pickup = it
-                        if (it != locationAddress) {
-                            isUsingLocation = false
-                            pickupLocation = null
-                        }
-                    },
-                    label = { Text("Pickup") },
-                    modifier = Modifier.weight(1f),
-                    enabled = !isLoading && !isUsingLocation
-                )
-                
-                IconButton(
-                    onClick = {
-                        requestLocationPermission()
-                    },
-                    enabled = !isLoading
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_location),
-                        contentDescription = "Use current location",
-                        tint = if (isUsingLocation) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-
-            OutlinedTextField(
-                value = dropoff,
-                onValueChange = { dropoff = it },
-                label = { Text("Dropoff") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                enabled = !isLoading
-            )
-
-            Button(
-                onClick = {
-                    if ((pickup.isEmpty() && !isUsingLocation) || dropoff.isEmpty()) {
-                        Toast.makeText(
-                            context,
-                            "Please enter both pickup and dropoff locations",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        return@Button
-                    }
-
-                    isLoading = true
-                    lifecycleScope.launch {
-                        try {
-                            if (isUsingLocation && pickupLocation != null) {
-                                openInSplitScreenWithLocation(pickupLocation!!, dropoff)
-                            } else {
-                                openInSplitScreen(pickup, dropoff)
-                            }
-                        } finally {
-                            isLoading = false
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(if (isLoading) "Loading..." else "Compare")
             }
         }
     }
@@ -523,11 +415,11 @@ class MainActivity : ComponentActivity() {
     }
     
     private suspend fun openInSplitScreenWithLocation(pickupCoords: Pair<Double, Double>, dropoff: String) {
-        // For Uber, convert coordinates to address string
-        val pickupAddress = reverseGeocode(pickupCoords.first, pickupCoords.second) ?: "Current Location"
+        // Use the already-geocoded address to avoid redundant geocoding
+        val addressToUse = pickupAddress ?: "Current Location"
         
         // Open Uber deep link with address
-        val uberDeepLink = createUberDeepLink(pickupAddress, dropoff)
+        val uberDeepLink = createUberDeepLink(addressToUse, dropoff)
         val uberIntent = Intent(Intent.ACTION_VIEW, Uri.parse(uberDeepLink))
         uberIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 
