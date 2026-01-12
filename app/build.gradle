@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.compareapp'
+    namespace 'org.neteinstein.compareapp'
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.example.compareapp"
+        applicationId "org.neteinstein.compareapp"
         minSdk 24
         targetSdk 33
         versionCode 1
