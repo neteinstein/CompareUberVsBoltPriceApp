@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -131,6 +132,9 @@ class MainActivity : ComponentActivity() {
                 "Warning: ${missingApps.joinToString(" and ")} ${if (missingApps.size == 1) "app is" else "apps are"} required for this to work"
             }
         }
+        
+        val loadingText = stringResource(R.string.loading)
+        val compareText = stringResource(R.string.compare)
 
         Column(
             modifier = Modifier
@@ -141,7 +145,7 @@ class MainActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Compare App",
+                text = stringResource(R.string.app_name),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -162,7 +166,7 @@ class MainActivity : ComponentActivity() {
             OutlinedTextField(
                 value = pickup,
                 onValueChange = { pickup = it },
-                label = { Text("Pickup") },
+                label = { Text(stringResource(R.string.pickup_location)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
@@ -172,7 +176,7 @@ class MainActivity : ComponentActivity() {
             OutlinedTextField(
                 value = dropoff,
                 onValueChange = { dropoff = it },
-                label = { Text("Dropoff") },
+                label = { Text(stringResource(R.string.dropoff_location)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 24.dp),
@@ -184,7 +188,7 @@ class MainActivity : ComponentActivity() {
                     if (pickup.isEmpty() || dropoff.isEmpty()) {
                         Toast.makeText(
                             context,
-                            "Please enter both pickup and dropoff locations",
+                            context.getString(R.string.validation_message),
                             Toast.LENGTH_SHORT
                         ).show()
                         return@Button
@@ -210,7 +214,7 @@ class MainActivity : ComponentActivity() {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }
-                Text(if (isLoading) "Loading..." else "Compare")
+                Text(if (isLoading) loadingText else compareText)
             }
         }
     }
@@ -245,13 +249,13 @@ class MainActivity : ComponentActivity() {
             } catch (e: Exception) {
                 Log.e("MainActivity", "Could not open Bolt app: ${e.message}")
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "Could not open Bolt app", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, getString(R.string.error_bolt), Toast.LENGTH_SHORT).show()
                 }
             }
         } catch (e: Exception) {
             Log.e("MainActivity", "Could not open Uber app: ${e.message}")
             withContext(Dispatchers.Main) {
-                Toast.makeText(this@MainActivity, "Could not open Uber app", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, getString(R.string.error_uber), Toast.LENGTH_SHORT).show()
             }
         }
     }
