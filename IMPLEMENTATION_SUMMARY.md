@@ -17,7 +17,8 @@ This Android application allows users to compare ride-sharing services (Uber and
 
 ### 4. Deep Link Integration
 ✓ **Uber Deep Link**: `uber://?action=setPickup&pickup[formatted_address]=...&dropoff[formatted_address]=...`
-✓ **Bolt Deep Link**: `bolt://rideplanning?pickup=...&destination=...`
+✓ **Bolt Deep Link**: `bolt://ride?pickup_lat=...&pickup_lng=...&destination_lat=...&destination_lng=...`
+✓ **Geocoding**: Automatically converts text addresses to coordinates for Bolt using Android's Geocoder
 
 ### 5. Split Screen Opening
 ✓ Uses `FLAG_ACTIVITY_LAUNCH_ADJACENT` to open both apps in split screen mode
@@ -61,13 +62,26 @@ val pickupEncoded = URLEncoder.encode(pickup, "UTF-8")
 val dropoffEncoded = URLEncoder.encode(dropoff, "UTF-8")
 ```
 
-### 3. Split Screen Intent Flags
+### 3. Geocoding for Bolt
+```kotlin
+private fun geocodeAddress(address: String): Pair<Double, Double>? {
+    val addresses = geocoder.getFromLocationName(address, 1)
+    if (addresses != null && addresses.isNotEmpty()) {
+        val location = addresses[0]
+        return Pair(location.latitude, location.longitude)
+    }
+    return null
+}
+```
+Converts text addresses to coordinates for Bolt deep link, with fallback to text-based format if geocoding fails.
+
+### 4. Split Screen Intent Flags
 ```kotlin
 uberIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 boltIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 ```
 
-### 4. Error Handling
+### 5. Error Handling
 ```kotlin
 try {
     startActivity(uberIntent)
@@ -76,7 +90,7 @@ try {
 }
 ```
 
-### 5. Modern Handler Usage
+### 6. Modern Handler Usage
 ```kotlin
 Handler(Looper.getMainLooper()).postDelayed({
     // Launch Bolt after delay
@@ -133,5 +147,7 @@ To fully test this application:
 
 - The app requires both Uber and Bolt apps to be installed for full functionality
 - If either app is not installed, a user-friendly error message is displayed
-- Deep link formats are based on official Uber and Bolt documentation
+- Deep link formats are based on official Uber documentation and community research for Bolt
+- Bolt deep link now uses coordinate-based format (bolt://ride) with automatic geocoding
+- If geocoding fails (e.g., no internet connection), Bolt deep link falls back to text-based format
 - Split screen behavior may vary depending on device manufacturer and Android version

@@ -46,8 +46,10 @@ uber://?action=setPickup&pickup[formatted_address]=PICKUP&dropoff[formatted_addr
 
 **Bolt:**
 ```
-bolt://rideplanning?pickup=PICKUP&destination=DROPOFF
+bolt://ride?pickup_lat=LAT&pickup_lng=LNG&destination_lat=LAT&destination_lng=LNG
 ```
+
+The app automatically converts text addresses to coordinates using Android's Geocoder service for the Bolt deep link. If geocoding fails, it falls back to a text-based format.
 
 ## Technical Details
 
