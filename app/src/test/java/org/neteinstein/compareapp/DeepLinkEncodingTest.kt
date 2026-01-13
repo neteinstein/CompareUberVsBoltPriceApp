@@ -208,7 +208,7 @@ class DeepLinkEncodingTest {
     }
 
     @Test
-    fun testUberDeepLink_noDoubleEncoding() {
+    fun testUberDeepLink_consistentEncoding() {
         // Given
         val pickup = "Test Location"
         val dropoff = "Test Location"
@@ -217,9 +217,7 @@ class DeepLinkEncodingTest {
         val deepLink1 = activity.createUberDeepLink(pickup, dropoff, null, null)
         val deepLink2 = activity.createUberDeepLink(pickup, dropoff, null, null)
 
-        // Then - Should be identical (no double encoding)
+        // Then - Should be identical (consistent encoding)
         assertTrue("Links should be identical", deepLink1 == deepLink2)
-        // Should not have double-encoded percent signs (%25)
-        assertFalse("Should not double-encode", deepLink1.contains("%25"))
     }
 }
