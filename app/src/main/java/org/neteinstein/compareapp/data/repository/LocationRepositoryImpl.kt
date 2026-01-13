@@ -16,7 +16,6 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import org.neteinstein.compareapp.utils.MathUtils
 import java.io.IOException
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
