@@ -14,9 +14,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import org.neteinstein.compareapp.utils.MathUtils
 import java.io.IOException
-import java.math.BigDecimal
-import java.math.RoundingMode
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -87,7 +86,7 @@ class LocationRepositoryImpl @Inject constructor(
                 val addresses = geocoder.getFromLocationName(address, 1)
                 if (addresses != null && addresses.isNotEmpty()) {
                     val location = addresses[0]
-                    Pair(roundDecimal(location.latitude), roundDecimal(location.longitude))
+                    Pair(MathUtils.roundDecimal(location.latitude), MathUtils.roundDecimal(location.longitude))
                 } else {
                     Log.w("LocationRepository", "No results found for address: $address")
                     null
@@ -98,7 +97,4 @@ class LocationRepositoryImpl @Inject constructor(
             }
         }
     }
-
-    private fun roundDecimal(value: Double, scale: Int = 6) =
-        BigDecimal(value).setScale(scale, RoundingMode.HALF_UP).toDouble()
 }
