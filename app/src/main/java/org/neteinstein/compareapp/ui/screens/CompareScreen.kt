@@ -80,8 +80,6 @@ fun CompareScreen(
 
     // Check app installation status when screen is created and when it resumes
     DisposableEffect(lifecycleOwner) {
-        viewModel.checkInstalledApps()
-
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.checkInstalledApps()

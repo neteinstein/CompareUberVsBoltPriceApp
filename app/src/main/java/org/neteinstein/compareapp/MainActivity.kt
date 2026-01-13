@@ -23,6 +23,11 @@ import org.neteinstein.compareapp.ui.theme.CompareAppTheme
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        // Delay to ensure split screen mode is ready before launching second app
+        private const val SPLIT_SCREEN_DELAY_MS = 500L
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -54,7 +59,7 @@ class MainActivity : ComponentActivity() {
                 startActivity(uberIntent)
 
                 // Small delay to ensure split screen is ready
-                kotlinx.coroutines.delay(500)
+                kotlinx.coroutines.delay(SPLIT_SCREEN_DELAY_MS)
                 
                 try {
                     // Open Bolt deep link

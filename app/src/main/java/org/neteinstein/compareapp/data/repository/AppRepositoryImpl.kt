@@ -12,6 +12,11 @@ class AppRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context
 ) : AppRepository {
 
+    companion object {
+        private const val UBER_PACKAGE_NAME = "com.ubercab"
+        private const val BOLT_PACKAGE_NAME = "ee.mtakso.client"
+    }
+
     override fun isAppInstalled(packageName: String): Boolean {
         return try {
             context.packageManager.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES)
@@ -23,8 +28,8 @@ class AppRepositoryImpl @Inject constructor(
     }
 
     override fun checkRequiredApps(): Pair<Boolean, Boolean> {
-        val isUberInstalled = isAppInstalled("com.ubercab")
-        val isBoltInstalled = isAppInstalled("ee.mtakso.client")
+        val isUberInstalled = isAppInstalled(UBER_PACKAGE_NAME)
+        val isBoltInstalled = isAppInstalled(BOLT_PACKAGE_NAME)
         return Pair(isUberInstalled, isBoltInstalled)
     }
 }
