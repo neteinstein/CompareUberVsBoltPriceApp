@@ -10,19 +10,21 @@ import org.junit.Test
  */
 class VersionConfigTest {
 
+    companion object {
+        // Semantic versioning pattern: MAJOR.MINOR.PATCH where each part is a number
+        private val SEMANTIC_VERSION_PATTERN = Regex("""^\d+\.\d+\.\d+$""")
+    }
+
     @Test
     fun testVersionName_followsSemanticVersioning() {
         // Given
         val versionName = BuildConfig.VERSION_NAME
 
-        // Then - Version should follow MAJOR.MINOR.PATCH format (e.g., "1.0.0")
-        val parts = versionName.split(".")
-        assertTrue("Version should have at least 3 parts (MAJOR.MINOR.PATCH)", parts.size >= 3)
-        
-        // Verify each part is a number
-        parts.take(3).forEach { part ->
-            assertTrue("Each version part should be a number: $part", part.toIntOrNull() != null)
-        }
+        // Then - Should match semantic versioning pattern (e.g., "1.0.0")
+        assertTrue(
+            "Version name should follow MAJOR.MINOR.PATCH format (e.g., 1.0.0)",
+            SEMANTIC_VERSION_PATTERN.matches(versionName)
+        )
     }
 
     @Test
@@ -35,15 +37,17 @@ class VersionConfigTest {
     }
 
     @Test
-    fun testVersionName_format() {
+    fun testVersionName_hasThreeParts() {
         // Given
         val versionName = BuildConfig.VERSION_NAME
 
-        // Then - Should match semantic versioning pattern
-        val semanticVersionPattern = Regex("""^\d+\.\d+\.\d+$""")
-        assertTrue(
-            "Version name should follow MAJOR.MINOR.PATCH format (e.g., 1.0.0)",
-            semanticVersionPattern.matches(versionName)
-        )
+        // Then - Version should have exactly 3 parts (MAJOR.MINOR.PATCH)
+        val parts = versionName.split(".")
+        assertEquals("Version should have exactly 3 parts (MAJOR.MINOR.PATCH)", 3, parts.size)
+        
+        // Verify each part is a valid number
+        parts.forEach { part ->
+            assertTrue("Each version part should be a number: $part", part.toIntOrNull() != null)
+        }
     }
 }
