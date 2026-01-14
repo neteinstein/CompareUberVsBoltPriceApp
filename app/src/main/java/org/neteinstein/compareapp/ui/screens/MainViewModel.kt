@@ -65,19 +65,17 @@ class MainViewModel @Inject constructor(
             try {
                 val location = locationRepository.getCurrentLocation()
                 if (location != null) {
-                    val roundedLat = MathUtils.roundDecimal(location.latitude)
-                    val roundedLng = MathUtils.roundDecimal(location.longitude)
-                    val address = locationRepository.reverseGeocode(roundedLat, roundedLng)
-                        ?: "Lat: ${roundedLat}, Lng: ${roundedLng}"
+                    val address = locationRepository.reverseGeocode(location.latitude, location.longitude)
+                        ?: "Lat: ${location.latitude}, Lng: ${location.longitude}"
                     
                     _uiState.update { 
                         it.copy(
                             pickup = address,
-                            pickupCoordinates = Pair(roundedLat, roundedLng),
+                            pickupCoordinates = Pair(location.latitude, location.longitude),
                             isUsingDeviceLocation = true
                         )
                     }
-                    onLocationReceived(roundedLat, roundedLng, address)
+                    onLocationReceived(location.latitude, location.longitude, address)
                 } else {
                     onError()
                 }
