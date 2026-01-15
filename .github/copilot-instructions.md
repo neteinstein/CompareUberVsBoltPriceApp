@@ -15,7 +15,7 @@ CompareApp is an Android application that allows users to compare ride-sharing s
 ## Tech Stack
 
 - **Language:** Kotlin
-- **Build System:** Gradle 8.0+
+- **Build System:** Gradle 8.14.3
 - **Minimum SDK:** 24 (Android 7.0)
 - **Target SDK:** 36
 - **UI Framework:** Jetpack Compose with Material3
