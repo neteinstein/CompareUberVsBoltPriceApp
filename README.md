@@ -131,6 +131,7 @@ For signed releases and Play Store deployment, see [docs/DEPLOYMENT.md](docs/DEP
 
 ## Documentation
 
+- **[CHANGELOG](CHANGELOG.md)** - Release history and version changes
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Detailed low-level architecture
 - **[CI/CD Pipeline](docs/CICD.md)** - Continuous integration and deployment
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Play Store deployment process
