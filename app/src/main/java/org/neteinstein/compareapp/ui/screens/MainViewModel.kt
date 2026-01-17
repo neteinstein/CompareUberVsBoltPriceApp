@@ -160,7 +160,7 @@ class MainViewModel @Inject constructor(
         pickupCoords: Pair<Double, Double>?,
         dropoffCoords: Pair<Double, Double>?
     ): String {
-        Log.d("MainViewModel, ", "pickup: $pickup, dropoff: $dropoff, pickupCoords: $pickupCoords, dropoffCoords: $dropoffCoords")
+        Log.d("MainViewModel", "pickup: $pickup, dropoff: $dropoff, pickupCoords: $pickupCoords, dropoffCoords: $dropoffCoords")
         return if (pickupCoords != null && dropoffCoords != null) {
             val pickupLat = formatCoordinate(pickupCoords.first)
             val pickupLng = formatCoordinate(pickupCoords.second)
@@ -183,7 +183,7 @@ class MainViewModel @Inject constructor(
         pickupCoords: Pair<Double, Double>?,
         dropoffCoords: Pair<Double, Double>?
     ): String {
-        Log.d("MainViewModel, ", "pickup: $pickup, dropoff: $dropoff, pickupCoords: $pickupCoords, dropoffCoords: $dropoffCoords")
+        Log.d("MainViewModel", "pickup: $pickup, dropoff: $dropoff, pickupCoords: $pickupCoords, dropoffCoords: $dropoffCoords")
         return if (pickupCoords != null && dropoffCoords != null) {
             val pickupLat = formatCoordinate(pickupCoords.first)
             val pickupLng = formatCoordinate(pickupCoords.second)
