@@ -183,10 +183,10 @@ class MainViewModel @Inject constructor(
             val destLng = String.format(Locale.US, "%.6f", dropoffCoords.second)
             "https://bolt.eu/ride/?pickup_lat=$pickupLat&pickup_lng=$pickupLng&destination_lat=$destLat&destination_lng=$destLng"
         } else {
-            Log.w("MainViewModel", "Geocoding failed, using fallback Bolt deep link format")
+            Log.w("MainViewModel", "Geocoding failed, using fallback Bolt web link format")
             val pickupEncoded = URLEncoder.encode(pickup, "UTF-8")
             val dropoffEncoded = URLEncoder.encode(dropoff, "UTF-8")
-            "bolt://ride?pickup=$pickupEncoded&destination=$dropoffEncoded"
+            "https://bolt.eu/ride/?pickup=$pickupEncoded&destination=$dropoffEncoded"
         }
     }
 }
